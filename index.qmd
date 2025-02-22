@@ -1,6 +1,4 @@
 ---
-title: "My Presentation"
-author: "Joel Nitta"
 format:
   revealjs:
     incremental: false
@@ -9,10 +7,101 @@ execute:
   echo: true
 ---
 
-## Amazing content
+## 次世代 DNA シーケンスによるコケシノブ科の系統解析:深い系統関係の解明
 
-ipsum lorem
+**ニッタジョエル*(千葉大・国際教養)**・Weston Testo (Univ. Vermont)・Michael Sundue (Royal Botanic Garden Edinburgh)・Alejandra Vasco (Fort Worth Botanic Garden)・ Laura Kragh Frederiksen (Aarhus Univ.)・Hanna Tuomisto (Aarhus Univ. / Univ. Turku)・ GoFlag Consortium・海老原淳(科博・植物)
 
-## More amazing content
+# 背景
 
-blip blop
+## コケシノブ科
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- 一細胞層から成る葉を持つ独特なシダ植物系統
+- やく600種
+- 主に熱帯・多湿な環境
+:::
+
+::: {.column width="50%"}
+:::
+
+::::
+
+## コケシノブ科の系統
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- 二つの大きな系統
+  - *Hymenophyllum*
+  - 講義の*Trichomanes*
+:::
+
+::: {.column width="50%"}
+:::
+
+::::
+
+## *Hymenophyllum*
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- 形態・生態的に均一
+  - 着生
+  - 中型
+:::
+
+::: {.column width="50%"}
+:::
+
+::::
+
+## 講義の*Trichomanes*
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- 形態、習性とも多様
+  - 地上性
+  - （半）着生
+  - 小型から大型まで
+:::
+
+::: {.column width="50%"}
+:::
+
+::::
+
+## コケシノブ科の分類の再検討
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- Ebihara et al. 2006
+- 講義の*Trichomanes*を８つの族に分ける
+:::
+
+::: {.column width="50%"}
+:::
+
+::::
+
+## 残っている疑問
+
+- 族間の関係が明らかになっていない
+- どの順番で地上性から着生（あるいは、その反対）に進化したのか？
+
+## 本研究の目的
+
+- **ゲノムワイドなデータセット**を用いてコケシノブ科の系統関係を明らかにする
+- コケシノブ科における習性の進化の再検討を行う
+
+# 方法
+
+## サンプリング
+
+## 次世代シーケンス
+
+# 結果と考察
