@@ -1,3 +1,6 @@
 /.quarto/
 index_files
 *.html
+_targets*
+.DS_store
+working*
