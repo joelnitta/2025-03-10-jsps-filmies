@@ -4,3 +4,4 @@ index_files
 _targets*
 .DS_store
 working*
+*.code-workspace
