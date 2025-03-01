@@ -2,10 +2,11 @@
 format:
   revealjs:
     incremental: false
-    css: styles.css
+    theme: [default, custom.scss]
 execute: 
   echo: false
 ---
+
 ```{r}
 # label: setup
 suppressPackageStartupMessages(library(tidyverse))
@@ -13,7 +14,10 @@ library(targets)
 library(ape)
 library(ggtree)
 
-## Rescale a tree
+# Define location of targets cache from goflag filmies analysis
+filmy_store <- "data/_targets-2025-02-26"
+
+# Rescale a tree
 rescale_tree_len <- function (tree, scale){
 	tree$edge.length <- tree$edge.length / max(phytools::nodeHeights(tree)) * scale
 	tree
@@ -143,8 +147,18 @@ make_bs_tbl <- function(tree, cutoff = 0) {
 
 ```{r}
 #| label: sampling
-tar_load(combined_samples, store = "data/_targets-2025-02-26") 
-tar_load(samples_with_subgen, store = "data/_targets-2025-02-26")
+tar_load(combined_samples, store = filmy_store) 
+tar_load(samples_with_subgen, store = filmy_store)
+
+samples_with_subgen <-
+  samples_with_subgen |>
+  mutate(
+   subgenus = case_when(
+    species == "Didymoglossum fulgens" ~ "Microgonium",
+    species == "Didymoglossum sublimbatum" ~ "Microgonium",
+    .default = subgenus
+   ) 
+  )
 
 samples_for_table <-
   combined_samples |>
@@ -237,8 +251,8 @@ taxon_count |>
 ### リードの１割が対象遺伝子にマップされた
 
 ```{r}
-tar_load(hybpiper_gene_stats_list, store = "data/_targets-2025-02-26")
-tar_load(hybpiper_gene_stats_list_plastome, store = "data/_targets-2025-02-26")
+tar_load(hybpiper_gene_stats_list, store = filmy_store)
+tar_load(hybpiper_gene_stats_list_plastome, store = filmy_store)
 
 read_stats_nuc <-
   hybpiper_gene_stats_list[[2]] |>
@@ -312,6 +326,10 @@ tar_load(
   c(hybpiper_rec_lens, hybpiper_rec_lens_plastome),
   store = "data/_targets-2025-02-26")
 
+n_markers_nuc <- n_distinct(hybpiper_rec_lens$gene)
+
+n_markers_plastome <- n_distinct(hybpiper_rec_lens_plastome$gene)
+
 mean_rec_len_nuc <- hybpiper_rec_lens$perc_length |>
   mean() |>
   scales::percent(accuracy = 0.1)
@@ -358,7 +376,7 @@ ggplot(hybpiper_rec_lens_plastome, aes(x = gene, y = species, fill = perc_length
 tar_load(
   c(hybpiper_dna_tree_relabeled, hybpiper_dna_tree,
     samples_with_subgen),
-  store = "data/_targets-2025-02-26")
+  store = filmy_store)
 
 hybpiper_dna_tree_plotting <- hybpiper_dna_tree
 
@@ -387,7 +405,17 @@ dna_tree_plot <- ggtree(hybpiper_dna_tree_plotting) %<+%
 
 dna_tree_plot +
   geom_tiplab(aes(label = species), size = 3) +
-  geom_nodelab(aes(label = bootstrap), hjust = -0.1, size = 3)
+  geom_nodelab(aes(label = bootstrap), hjust = -0.1, size = 3) +
+  annotate(
+    "text", x = 0, y = Inf,
+    label = glue::glue("GoFLAG マーカー（{n_markers_nuc}個）"),
+    size = 6, hjust = 0.1, vjust = 1,
+    family = "HiraKakuPro-W3") +
+  annotate(
+    "text", x = Inf, y = 0,
+    label = "iqtreeによるML法\n1000回ブートストラップ",
+    size = 6, hjust = 1, vjust = -0.5,
+    family = "HiraKakuPro-W3")
 ```
 
 ---
@@ -446,12 +474,101 @@ trich_nuc_tree_plot +
     data = genus_labs,
     mapping = aes(node = mrca, label = genus),
     offset = 6,
-    hjust = -0.1
+    hjust = -0.1,
+    extend = 0.25
     ) +
   geom_cladelab(
     data = subgenus_labs,
     mapping = aes(node = mrca, label = subgenus),
     offset = 10,
-    hjust = -0.1
-    )
+    hjust = -0.1,
+    extend = 0.25
+    ) +
+  annotate(
+    "text", x = 0, y = Inf,
+    label = glue::glue("GoFLAG マーカー（{n_markers_nuc}個）"),
+    size = 6, hjust = 0.1, vjust = 1,
+    family = "HiraKakuPro-W3") +
+  annotate(
+    "text", x = Inf, y = 0,
+    label = "iqtreeによるML法\n1000回ブートストラップ",
+    size = 4, hjust = 1, vjust = -0.5,
+    family = "HiraKakuPro-W3")
+```
+
+---
+
+```{r}
+#| label: tric-plastid-tree
+#| fig-height: 8
+#| fig-width: 12
+tar_load(combined_sanger_tree, store = filmy_store)
+
+trich_plastid_tree <- combined_sanger_tree
+
+trich_plastid_data <- tibble(
+  tip = trich_plastid_tree$tip.label
+) |>
+  left_join(samples_with_subgen, relationship = "one-to-one", by = "tip")
+
+tips_hym <- trich_plastid_data |>
+  filter(genus == "Hymenophyllum") |>
+  pull(tip)
+
+trich_plastid_tree <- 
+  trich_plastid_tree |>
+  root(tips_hym) |>
+  drop.tip(tips_hym) |>
+  # Remove single poorly placed Vandenboschia
+  drop.tip("P044_WF02") |>
+  rescale_tree_len(100)
+
+bs_tibble <- make_bs_tbl(trich_plastid_tree)
+
+trich_plastid_data <- tibble(
+  tip = trich_plastid_tree$tip.label
+) |>
+  left_join(samples_with_subgen, relationship = "one-to-one", by = "tip")
+
+genus_labs <- trich_plastid_data |>
+  group_by(genus) |>
+  summarize(mrca = getMRCA(trich_plastid_tree, tip)) |>
+  select(mrca, genus)
+
+subgenus_labs <- trich_plastid_data |>
+  filter(!is.na(subgenus)) |>
+  add_count(subgenus) |>
+  filter(n > 1) |>
+  group_by(subgenus) |>
+  summarize(mrca = getMRCA(trich_plastid_tree, tip)) |>
+  select(mrca, subgenus)
+
+trich_plastid_tree_plot <- ggtree(trich_plastid_tree, branch.length = "none") %<+%
+  bs_tibble %<+%
+  select(trich_plastid_data, tip, species) +
+  # add extra horizontal space for species names
+  xlim(0, 35)
+
+trich_plastid_tree_plot +
+  geom_tiplab(aes(label = species), size = 1.5) +
+  geom_nodelab(aes(label = bootstrap), hjust = -0.1, size = 1.5) +
+  geom_cladelab(
+    data = genus_labs,
+    mapping = aes(node = mrca, label = genus),
+    offset = 6,
+    hjust = -0.1,
+    extend = 0.25
+    ) +
+  geom_cladelab(
+    data = subgenus_labs,
+    mapping = aes(node = mrca, label = subgenus),
+    offset = 11,
+    hjust = -0.1,
+    extend = 0.25
+    ) +
+  annotate(
+    "text", x = 0, y = Inf,
+    label = glue::glue("葉緑体マーカー（{n_markers_plastome}個）"),
+    size = 6, hjust = 0.1, vjust = 1,
+    family = "HiraKakuPro-W3")
 ```
