@@ -14,7 +14,7 @@ library(ape)
 library(ggtree)
 
 ## Rescale a tree
-rescale_tree <- function (tree, scale){
+rescale_tree_len <- function (tree, scale){
 	tree$edge.length <- tree$edge.length / max(phytools::nodeHeights(tree)) * scale
 	tree
 }
@@ -356,7 +356,7 @@ tips_hym <- hybpiper_dna_tree_data |>
 hybpiper_dna_tree_plotting <- 
   hybpiper_dna_tree_plotting |>
   root(tips_hym) |>
-  rescale_tree(100)
+  rescale_tree_len(100)
 
 # Make a dataframe (tibble) with node IDs (integers) and their corresponding bootstrap support values
 # The tibble has two columns: one called "node", the other can be named as we like (here, "bootstrap")
@@ -382,7 +382,6 @@ dna_tree_plot +
 
 ---
 
-
 ```{r}
 #| label: tric-tree
 #| fig-height: 8
@@ -401,28 +400,45 @@ tips_hym <- trich_nuc_data |>
 trich_nuc_tree <- 
   trich_nuc_tree |>
   root(tips_hym) |>
-  rescale_tree(100) |>
-  drop.tip(tips_hym)
+  drop.tip(tips_hym) |>
+  rescale_tree_len(100)
 
 trich_nuc_data <- tibble(
   tip = trich_nuc_tree$tip.label
 ) |>
   left_join(samples_with_subgen, relationship = "one-to-one", by = "tip")
 
-# Make a dataframe (tibble) with node IDs (integers) and their corresponding bootstrap support values
-# The tibble has two columns: one called "node", the other can be named as we like (here, "bootstrap")
-bs_tibble <- tibble(
-  node = 1:Nnode(trich_nuc_tree) + Ntip(trich_nuc_tree), 
-  bootstrap = parse_number(trich_nuc_tree$node.label)
-  )
+genus_labs <- trich_nuc_data |>
+  group_by(genus) |>
+  summarize(mrca = getMRCA(trich_nuc_tree, tip)) |>
+  select(mrca, genus)
 
-trich_nuc_tree_plot <- ggtree(trich_nuc_tree) %<+%
-  bs_tibble %<+%
-  trich_nuc_data +
+subgenus_labs <- trich_nuc_data |>
+  filter(!is.na(subgenus)) |>
+  add_count(subgenus) |>
+  filter(n > 1) |>
+  group_by(subgenus) |>
+  summarize(mrca = getMRCA(trich_nuc_tree, tip)) |>
+  select(mrca, subgenus)
+
+trich_nuc_tree_plot <- ggtree(trich_nuc_tree, branch.length = "none") %<+%
+  # subgenus_labs %<+%
+  select(trich_nuc_data, tip, species) +
   # add extra horizontal space for species names
-  xlim(0, 120)
+  xlim(0, 20)
 
 trich_nuc_tree_plot +
   geom_tiplab(aes(label = species), size = 5) +
-  geom_nodelab(aes(label = bootstrap), hjust = -0.1, size = 5)
+  geom_cladelab(
+    data = genus_labs,
+    mapping = aes(node = mrca, label = genus),
+    offset = 6,
+    hjust = -0.1
+    ) +
+  geom_cladelab(
+    data = subgenus_labs,
+    mapping = aes(node = mrca, label = subgenus),
+    offset = 10,
+    hjust = -0.1
+    )
 ```
