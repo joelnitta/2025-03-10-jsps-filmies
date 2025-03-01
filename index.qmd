@@ -18,6 +18,24 @@ rescale_tree_len <- function (tree, scale){
 	tree$edge.length <- tree$edge.length / max(phytools::nodeHeights(tree)) * scale
 	tree
 }
+
+# Create a bootstrap tibble for plotting tree
+make_bs_tbl <- function(tree, cutoff = 0) {
+  # Make a dataframe (tibble) with node IDs (integers) and their corresponding bootstrap support values
+  # The tibble has two columns: one called "node", the other can be named as we like (here, "bootstrap")
+  bs_tibble <- tibble(
+    # hard-code node ID: internal nodes start after tip nodes,
+    # and phy$node.label is in the same order as internal nodes
+    node = 1:Nnode(tree) + Ntip(tree), 
+    bootstrap = parse_number(tree$node.label)
+    )
+  if (cutoff > 0) {
+    bs_tibble <-
+    bs_tibble |>
+      mutate(bootstrap = if_else(bootstrap < cutoff, "", bootstrap))
+  }
+  bs_tibble
+}
 ```
 
 ## 次世代 DNA シーケンスによるコケシノブ科の系統解析:<br>深い系統関係の解明
@@ -358,16 +376,8 @@ hybpiper_dna_tree_plotting <-
   root(tips_hym) |>
   rescale_tree_len(100)
 
-# Make a dataframe (tibble) with node IDs (integers) and their corresponding bootstrap support values
-# The tibble has two columns: one called "node", the other can be named as we like (here, "bootstrap")
-bs_tibble <- tibble(
-  # hard-code node ID: internal nodes start after tip nodes,
-  # and phy$node.label is in the same order as internal nodes
-  node = 1:Nnode(hybpiper_dna_tree_plotting) + Ntip(hybpiper_dna_tree_plotting), 
-  # Don't print BS < 50%
-  # (or to show all BS, just do `bootstrap = hybpiper_dna_tree_plotting$node.label`)
-  bootstrap = parse_number(hybpiper_dna_tree_plotting$node.label)
-  )
+# Prepare bootstrap tbl
+bs_tibble <- make_bs_tbl(hybpiper_dna_tree_plotting)
 
 dna_tree_plot <- ggtree(hybpiper_dna_tree_plotting) %<+%
   bs_tibble %<+%
@@ -408,6 +418,8 @@ trich_nuc_data <- tibble(
 ) |>
   left_join(samples_with_subgen, relationship = "one-to-one", by = "tip")
 
+bs_tibble <- make_bs_tbl(trich_nuc_tree)
+
 genus_labs <- trich_nuc_data |>
   group_by(genus) |>
   summarize(mrca = getMRCA(trich_nuc_tree, tip)) |>
@@ -422,13 +434,14 @@ subgenus_labs <- trich_nuc_data |>
   select(mrca, subgenus)
 
 trich_nuc_tree_plot <- ggtree(trich_nuc_tree, branch.length = "none") %<+%
-  # subgenus_labs %<+%
+  bs_tibble %<+%
   select(trich_nuc_data, tip, species) +
   # add extra horizontal space for species names
   xlim(0, 20)
 
 trich_nuc_tree_plot +
   geom_tiplab(aes(label = species), size = 5) +
+  geom_nodelab(aes(label = bootstrap), hjust = -0.1, size = 3) +
   geom_cladelab(
     data = genus_labs,
     mapping = aes(node = mrca, label = genus),
