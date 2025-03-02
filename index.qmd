@@ -367,7 +367,7 @@ ggplot(hybpiper_rec_lens_plastome, aes(x = gene, y = species, fill = perc_length
   )
 ```
 
----
+<!-- Generate trees -->
 
 ```{r}
 #| label: overall-tree
@@ -403,7 +403,7 @@ dna_tree_plot <- ggtree(hybpiper_dna_tree_plotting) %<+%
   # add extra horizontal space for species names
   xlim(0, 120)
 
-dna_tree_plot +
+overall_tree <- dna_tree_plot +
   geom_tiplab(aes(label = species), size = 3) +
   geom_nodelab(aes(label = bootstrap), hjust = -0.1, size = 3) +
   annotate(
@@ -416,9 +416,10 @@ dna_tree_plot +
     label = "iqtreeによるML法\n1000回ブートストラップ",
     size = 6, hjust = 1, vjust = -0.5,
     family = "HiraKakuPro-W3")
+
+ggsave(plot = overall_tree, file = "images/overall_tree.png", height = 11, width = 12)
 ```
 
----
 
 ```{r}
 #| label: tric-tree
@@ -467,7 +468,7 @@ trich_nuc_tree_plot <- ggtree(trich_nuc_tree, branch.length = "none") %<+%
   # add extra horizontal space for species names
   xlim(0, 20)
 
-trich_nuc_tree_plot +
+trich_tree <- trich_nuc_tree_plot +
   geom_tiplab(aes(label = species), size = 5) +
   geom_nodelab(aes(label = bootstrap), hjust = -0.1, size = 3) +
   geom_cladelab(
@@ -494,9 +495,9 @@ trich_nuc_tree_plot +
     label = "iqtreeによるML法\n1000回ブートストラップ",
     size = 4, hjust = 1, vjust = -0.5,
     family = "HiraKakuPro-W3")
-```
 
----
+ggsave(plot = trich_tree, file = "images/trich_tree.png", height = 11, width = 12)
+```
 
 ```{r}
 #| label: tric-plastid-tree
@@ -543,13 +544,23 @@ subgenus_labs <- trich_plastid_data |>
   summarize(mrca = getMRCA(trich_plastid_tree, tip)) |>
   select(mrca, subgenus)
 
-trich_plastid_tree_plot <- ggtree(trich_plastid_tree, branch.length = "none") %<+%
+trich_plastid_tree_base <- ggtree(trich_plastid_tree, branch.length = "none") %<+%
   bs_tibble %<+%
   select(trich_plastid_data, tip, species) +
   # add extra horizontal space for species names
   xlim(0, 35)
 
-trich_plastid_tree_plot +
+subgenus_singleton <-
+  tibble(
+    mrca = MRCA(trich_plastid_tree_base, "Callistopteris_superba"),
+    subgenus = "Asiatrichomanes"
+  )
+
+subgenus_labs <- subgenus_labs |>
+  bind_rows(subgenus_singleton)
+
+trich_plastid_tree_plot <-
+  trich_plastid_tree_base +
   geom_tiplab(aes(label = species), size = 1.5) +
   geom_nodelab(aes(label = bootstrap), hjust = -0.1, size = 1.5) +
   geom_cladelab(
@@ -571,4 +582,41 @@ trich_plastid_tree_plot +
     label = glue::glue("葉緑体マーカー（{n_markers_plastome}個）"),
     size = 6, hjust = 0.1, vjust = 1,
     family = "HiraKakuPro-W3")
+
+ggsave(plot = trich_plastid_tree_plot, file = "images/trich_plastid_tree.png", height = 11, width = 12)
 ```
+
+```{r}
+#| label: tric-ss-plastid-tree-zoom
+#| fig-height: 8
+trich_ss_plastid_tree <- 
+  viewClade(trich_plastid_tree_base, MRCA(trich_plastid_tree_plot, "P044_WA03", "P044_WD04")) +
+  geom_tiplab(aes(label = species), size = 3) +
+  geom_nodelab(aes(label = bootstrap), hjust = -0.1, size = 3) +
+  geom_cladelab(
+    data = subgenus_labs,
+    mapping = aes(node = mrca, label = subgenus),
+    offset = 6,
+    hjust = -0.1,
+    extend = 0.25
+    ) +
+  annotate(
+    "text", x = 0, y = Inf,
+    label = glue::glue("葉緑体マーカー（{n_markers_plastome}個）"),
+    size = 6, hjust = -0.2, vjust = 1,
+    family = "HiraKakuPro-W3")
+
+ggsave(plot = trich_ss_plastid_tree, file = "images/trich_ss_plastid_tree.png", height = 11, width = 12)
+```
+
+## {background-color="white" background-image="images/overall_tree.png" background-size="contain" background-repeat="no-repeat" background-position="center"}
+
+## {background-color="white" background-image="images/trich_tree.png" background-size="contain" background-repeat="no-repeat" background-position="center"}
+
+## {background-color="white" background-image="images/trich_plastid_tree.png" background-size="contain" background-repeat="no-repeat" background-position="center"}
+
+## {background-color="white" background-image="images/trich_ss_plastid_tree.png" background-size="contain" background-repeat="no-repeat" background-position="center"}
+
+## {background-color="white" background-image="images/anc_res_plot.png" background-size="contain" background-repeat="no-repeat" background-position="75% 100%"}
+
+祖先形質復元
