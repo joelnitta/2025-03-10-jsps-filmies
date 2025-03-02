@@ -461,19 +461,34 @@
 <p><a href="https://www.pacb.com/wp-content/uploads/PCR-based-capture.svg" class="uri">https://www.pacb.com/wp-content/uploads/PCR-based-capture.svg</a></p>
 </div>
 </div></aside></section>
+<section id="核マーカーの情報処理" class="slide level2">
+<h2>核マーカーの情報処理</h2>
+<ul>
+<li>fastpでリードをクリーニング</li>
+<li>HybPiperパイプラインによるシーケンスエンリッチメント
+<ul>
+<li>bwaでリードをリファレンスにマッピングし、遺伝子ごとに分類</li>
+<li>SPAdesでコンティグをde novoアセンブル</li>
+<li>Exonerateでコーディング領域を抽出</li>
+</ul></li>
+</ul>
+</section>
 <section id="対象外リードの活用" class="slide level2">
 <h2>「対象外リード」の活用</h2>
 
 <img data-src="images/seq-cap-off-target.png" class="r-stretch"></section>
-<section id="核マーカーの情報処理" class="slide level2">
-<h2>核マーカーの情報処理</h2>
+<section id="葉緑体対象外マーカーの情報処理" class="slide level2">
+<h2>葉緑体(対象外)マーカーの情報処理</h2>
 <ul>
-<li>HybPiperパイプラインによるシーケンスのエンリッチメント
+<li>fastpでリードをクリーニング</li>
+<li>HybPiperパイプラインの一部を使用
 <ul>
-<li>fastpでリードのクリーニングを行う</li>
-<li>bwaでレフレンスにマッピングする</li>
-<li>SPAdesでコンティグをアッセムブル</li>
-<li>Exonerateで対象遺伝子を抽出する</li>
+<li>bwaでリードをリファレンスにマッピングし、遺伝子ごとに分類</li>
+</ul></li>
+<li>bbmapでリードをリファレンスに再マッピング</li>
+<li>kindelでコンセンサス配列を抽出
+<ul>
+<li>最低カバレッジを1に設定</li>
 </ul></li>
 </ul>
 </section></section>
@@ -524,20 +539,25 @@
 
 <h3 id="葉緑体伝子対象外でも-9.1解読">葉緑体伝子（対象外）でも 9.1%解読</h3>
 
+<!-- Generate trees -->
 <img data-src="index_files/figure-revealjs/unnamed-chunk-7-1.png" width="960" class="r-stretch"></section>
-<section class="slide level2">
+<section id="section" class="slide level2" data-background-color="white" data-background-image="images/overall_tree.png" data-background-size="contain" data-background-repeat="no-repeat" data-background-position="center">
+<h2></h2>
+</section>
+<section id="section-1" class="slide level2" data-background-color="white" data-background-image="images/trich_tree.png" data-background-size="contain" data-background-repeat="no-repeat" data-background-position="center">
+<h2></h2>
+</section>
+<section id="section-2" class="slide level2" data-background-color="white" data-background-image="images/trich_plastid_tree.png" data-background-size="contain" data-background-repeat="no-repeat" data-background-position="center">
+<h2></h2>
+</section>
+<section id="section-3" class="slide level2" data-background-color="white" data-background-image="images/trich_ss_plastid_tree.png" data-background-size="contain" data-background-repeat="no-repeat" data-background-position="center">
+<h2></h2>
+</section>
+<section id="section-4" class="slide level2" data-background-color="white" data-background-image="images/anc_res_plot.png" data-background-size="contain" data-background-repeat="no-repeat" data-background-position="75% 100%">
+<h2></h2>
+<p>祖先形質復元</p>
 
-
-<img data-src="index_files/figure-revealjs/overall-tree-1.png" width="960" class="r-stretch"></section>
-<section class="slide level2">
-
-
-<img data-src="index_files/figure-revealjs/tric-tree-1.png" width="960" class="r-stretch"></section>
-<section class="slide level2">
-
-
-
-<img data-src="index_files/figure-revealjs/tric-plastid-tree-1.png" width="1152" class="r-stretch"></section></section>
+</section></section>
     </div>
   <div class="quarto-auto-generated-content" style="display: none;">
 <div class="footer footer-default">
