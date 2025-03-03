@@ -42,7 +42,7 @@ make_bs_tbl <- function(tree, cutoff = 0) {
 }
 ```
 
-## 次世代 DNA シーケンスによる<br>コケシノブ科の系統解析:<br>深い系統関係の解明 {background-color="black" background-image="images/IMG_6580.png" background-size="cover" background-repeat="no-repeat" background-position="center"}
+## 次世代 DNA シーケンスによる<br>コケシノブ科の系統解析:<br>**深い系統関係の解明** {background-color="black" background-image="images/IMG_6580.png" background-size="cover" background-repeat="no-repeat" background-position="center"}
 
 :::: {.columns}
 
@@ -50,7 +50,7 @@ make_bs_tbl <- function(tree, cutoff = 0) {
 
 ::: {.medsmall}
 
-**ニッタ ジョエル(千葉大・国際教養)**・Weston Testo (Univ. Vermont)・Michael Sundue (Royal Botanic Garden Edinburgh)・Alejandra Vasco (Fort Worth Botanic Garden)・ Laura Kragh Frederiksen (Aarhus Univ.)・Hanna Tuomisto (Aarhus Univ. / Univ. Turku)・ GoFlag Consortium・海老原淳(科博・植物)
+**ニッタ ジョエル（千葉大・国際教養）**・Weston Testo (Univ. Vermont)・Michael Sundue (Royal Botanic Garden Edinburgh)・Alejandra Vasco (Fort Worth Botanic Garden)・ Laura Kragh Frederiksen (Aarhus Univ.)・Hanna Tuomisto (Aarhus Univ. / Univ. Turku)・ GoFlag Consortium・海老原淳（科博・植物）
 
 日本植物分類学　第24回大会
 
@@ -144,17 +144,21 @@ make_bs_tbl <- function(tree, cutoff = 0) {
 
 ::::
 
-## 分類の再検討（Ebihara et al. 2006）
+## 分類の再検討
 
 :::: {.columns}
 
-::: {.column width="30%"}
+::: {.column width="35%"}
+- Ebihara et al. (2006)
 - *Hymenophyllum*を10亜属に分ける
 - 広義の*Trichomanes*を8属に分ける
 :::
 
-::: {.column width="70%"}
-![](images/ebihara_2006_tree.png)
+::: {.column width="5%"}
+:::
+
+::: {.column width="60%"}
+![](images/ebihara_2006_tree.png){height="450"}
 :::
 
 ::::
