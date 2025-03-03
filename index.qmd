@@ -42,9 +42,27 @@ make_bs_tbl <- function(tree, cutoff = 0) {
 }
 ```
 
-## 次世代 DNA シーケンスによるコケシノブ科の系統解析:<br>深い系統関係の解明
+## 次世代 DNA シーケンスによる<br>コケシノブ科の系統解析:<br>深い系統関係の解明 {background-color="black" background-image="images/IMG_6580.png" background-size="cover" background-repeat="no-repeat" background-position="center"}
 
-**ニッタジョエル(千葉大・国際教養)**・Weston Testo (Univ. Vermont)・Michael Sundue (Royal Botanic Garden Edinburgh)・Alejandra Vasco (Fort Worth Botanic Garden)・ Laura Kragh Frederiksen (Aarhus Univ.)・Hanna Tuomisto (Aarhus Univ. / Univ. Turku)・ GoFlag Consortium・海老原淳(科博・植物)
+:::: {.columns}
+
+::: {.column width="50%"}
+
+::: {.medsmall}
+
+**ニッタ ジョエル(千葉大・国際教養)**・Weston Testo (Univ. Vermont)・Michael Sundue (Royal Botanic Garden Edinburgh)・Alejandra Vasco (Fort Worth Botanic Garden)・ Laura Kragh Frederiksen (Aarhus Univ.)・Hanna Tuomisto (Aarhus Univ. / Univ. Turku)・ GoFlag Consortium・海老原淳(科博・植物)
+
+日本植物分類学　第24回大会
+
+2025-03-10 OB14
+
+:::
+
+
+:::
+
+::::
+
 
 # 背景
 
@@ -52,28 +70,39 @@ make_bs_tbl <- function(tree, cutoff = 0) {
 
 :::: {.columns}
 
-::: {.column width="50%"}
+::: {.column width="30%"}
 - 一細胞層から成る葉を持つ独特なシダ植物系統
 - やく600種
 - 主に熱帯・多湿な環境
 :::
 
-::: {.column width="50%"}
+::: {.column width="70%"}
+![](images/filmies_examples.png)
 :::
 
 ::::
 
-## コケシノブ科の系統
+## 二つの大きな系統
 
 :::: {.columns}
 
-::: {.column width="50%"}
-- 二つの大きな系統
-  - *Hymenophyllum*
-  - 講義の*Trichomanes*
+::: {.column width="45%"}
+### *Hymenophyllum*
+
+![](images/involucre_bivalvate_ebihara.png){height="400"}
+
+- 二弁状の包膜
 :::
 
-::: {.column width="50%"}
+::: {.column width="10%"}
+:::
+
+::: {.column width="45%"}
+### 広義の*Trichomanes*
+
+![](images/involucre_tube_ebihara.png){height="400"}
+
+- 筒状の包膜
 :::
 
 ::::
@@ -83,55 +112,78 @@ make_bs_tbl <- function(tree, cutoff = 0) {
 :::: {.columns}
 
 ::: {.column width="50%"}
-- 形態・生態的に均一
+- 約300種
+- 形態・生態的に**均一**
   - 着生
   - 中型
 :::
 
 ::: {.column width="50%"}
+![](images/hymenophyllum_examples.png){height="600"}
 :::
 
 ::::
 
-## 講義の*Trichomanes*
+## 広義の*Trichomanes*
 
 :::: {.columns}
 
 ::: {.column width="50%"}
-- 形態、習性とも多様
+- 約300種
+- 形態、習性とも**多様**
+  - 岩上生
   - 地上性
-  - （半）着生
+  - 半着生
+  - 着生
   - 小型から大型まで
 :::
 
 ::: {.column width="50%"}
+![](images/trichomanoid_habit_examples.png){height="450"}
 :::
 
 ::::
 
-## コケシノブ科の分類の再検討
+## 分類の再検討（Ebihara et al. 2006）
 
 :::: {.columns}
 
-::: {.column width="50%"}
-- Ebihara et al. 2006
-- 講義の*Trichomanes*を８つの族に分ける
+::: {.column width="30%"}
+- *Hymenophyllum*を10亜属に分ける
+- 広義の*Trichomanes*を8属に分ける
 :::
 
-::: {.column width="50%"}
+::: {.column width="70%"}
+![](images/ebihara_2006_tree.png)
 :::
 
 ::::
 
 ## 残っている疑問
 
-- 族間の関係が明らかになっていない
+:::: {.columns}
+
+::: {.column width="50%"}
+- 属間の関係が明らかになっていない
 - どの順番で地上性から着生（あるいは、その反対）に進化したのか？
+:::
+
+::: {.column width="50%"}
+![](images/dubuisson_2003_theory.png)
+
+::: {.small}
+Dubuisson, J.-Y., et al. 2003 Bot. J. Linn. 142, 41–63.
+
+:::
+
+:::
+
+::::
 
 ## 本研究の目的
 
 - **ゲノムワイドなデータセット**を用いてコケシノブ科の系統関係を明らかにする
-- コケシノブ科における習性の進化の再検討を行う
+- コケシノブ科における習性の**進化の再検討**を行う
 
 # 方法
 
@@ -176,6 +228,7 @@ samples_for_table <-
     )
   )
 
+
 taxon_count <- 
   samples_for_table |>
   group_by(genus, subgenus, section) |>
@@ -183,6 +236,8 @@ taxon_count <-
   ungroup() |>
   arrange(genus, subgenus, section) |>
   mutate(across(everything(), ~replace_na(., "")))
+
+n_samples_total <- sum(taxon_count$n)
 
 taxon_count |>
   filter(genus != "Hymenophyllum") |>
@@ -201,6 +256,8 @@ taxon_count |>
   filter(genus == "Hymenophyllum") |>
   knitr::kable()
 ```
+
+合計 `r n_samples_total` サンプル
 
 :::
 
@@ -232,26 +289,105 @@ taxon_count |>
 :::
 :::
 
-## 核マーカーの情報処理
+## 核マーカーのシーケンス
 
-- fastpでリードをクリーニング
-- HybPiperパイプラインによるシーケンスエンリッチメント
-  - bwaでリードをリファレンスにマッピングし、遺伝子ごとに分類
-  - SPAdesでコンティグをde novoアセンブル
-  - Exonerateでコーディング領域を抽出
+- CTAB法によるDNA抽出
+- RAPiD Genomics社あるいはNovogene社に外注
+  - GoFLAGマーカーによるシーケンスキャプチャー
+  - 会社によって異なるプラットフォーム
+    - NovaSeq X Plus (150bp PE)
+    - HiSeq 3000 (100bp PE)
+
+## 核マーカーの情報処理 {.smaller}
+
+:::: {.columns}
+
+::: {.column width="60%"}
+- `fastp`でリードをクリーニング
+- `HybPiper`パイプラインによるシーケンスエンリッチメント
+  - `bwa`でリードをリファレンスにマッピングし、遺伝子ごとに分類
+  - `SPAdes`でコンティグをde novoアセンブル
+  - `Exonerate`でコーディング領域を抽出
+:::
+
+::: {.column width="40%"}
+![](images/hybpiper_flow.png)
+
+:::
+
+::::
 
 ## 「対象外リード」の活用
 
 ![](images/seq-cap-off-target.png)
 
+## 葉緑体(対象外)マーカーの情報処理 {.smaller}
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- `fastp`でリードをクリーニング
+- `HybPiper`パイプラインの一部を使用
+  - `bwa`でリードをリファレンスにマッピングし、遺伝子ごとに分類
+- `bbmap`でリードをリファレンスに再マッピング
+- `kindel`でコンセンサス配列を抽出
+  - 最低カバレッジを1に設定
+:::
+
+::: {.column width="50%"}
+![](images/kindel_flow.png)
+
+::: {.small}
+Constantinides, B., Robertson, D.L., 2017. JOSS 2, 282. <https://doi.org/10/gjzwjz>
+:::
+
+:::
+
+::::
+
 ## 葉緑体(対象外)マーカーの情報処理
 
-- fastpでリードをクリーニング
-- HybPiperパイプラインの一部を使用
-  - bwaでリードをリファレンスにマッピングし、遺伝子ごとに分類
-- bbmapでリードをリファレンスに再マッピング
-- kindelでコンセンサス配列を抽出
-  - 最低カバレッジを1に設定
+```{r}
+#| label: plastid-gene-sampling
+tar_load(c(
+  combined_aligned_trimmed_plastome_tbl, combined_aligned_trimmed_sanger_tbl,
+  combined_plastome_aln, combined_sanger_aln), store = filmy_store) 
+
+n_plastome_taxa <- nrow(combined_plastome_aln)
+n_plastome_markers <- n_distinct(combined_aligned_trimmed_plastome_tbl$locus)
+n_plastome_bp <- ncol(combined_plastome_aln) |> scales::number(big.mark = ",")
+
+n_sanger_taxa <- nrow(combined_sanger_aln)
+n_sanger_markers <- n_distinct(combined_aligned_trimmed_sanger_tbl$locus)
+n_sanger_bp <- ncol(combined_sanger_aln) |> scales::number(big.mark = ",")
+```
+
+- 新しく得た葉緑体データをFern Tree of Life v1.7.0（Nitta et al. 2022）のデータと組み合わせる
+- 二つの葉緑体データセットを用意する：
+  - 「全葉緑体」(`r n_plastome_taxa` 種 x `r n_plastome_markers` 遺伝子、`r n_plastome_bp` bp)
+  - 「サンガー法」(`r n_sanger_taxa` 種 x `r n_sanger_markers` 遺伝子、`r n_sanger_bp` bp)
+
+## 系統解析
+
+- `iqtree`で最尤法
+  - 1000回ブートストラップ
+- 適切な外群がないため、*Hymenophyllum*と*Trichomanes*（広義）の間にルートを置く
+
+---
+
+葉緑体マーカーの場合は全葉緑体データの系統樹を束縛にサンガー法データセットで系統樹を作成
+
+![](images/plastid_tree_flow.png){height="300"}
+
+Nitta et al. (2022)
+
+## 祖先形質復元
+
+- `phytools`で三つのモーデルを作成
+  - `ER` (Equal Rates): すべての状態間の遷移率が等しい
+  - `SYM` (Symmetric): 状態の変化は対称的で、遷移率は異なるが逆方向の変化は同じ
+  - `ARD` (All Rates Different): すべての遷移率が異なる
+- AICで最もデータに合うモデルを選択し、祖先形質復元を行う
 
 # 結果と考察
 
@@ -383,7 +519,7 @@ ggplot(hybpiper_rec_lens_plastome, aes(x = gene, y = species, fill = perc_length
 #| fig-height: 8
 # Load tree
 tar_load(
-  c(hybpiper_dna_tree_relabeled, hybpiper_dna_tree,
+  c(hybpiper_dna_tree,
     samples_with_subgen),
   store = filmy_store)
 
