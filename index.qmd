@@ -13,33 +13,12 @@ suppressPackageStartupMessages(library(tidyverse))
 library(targets)
 library(ape)
 library(ggtree)
+library(scico)
+
+source("functions.R")
 
 # Define location of targets cache from goflag filmies analysis
-filmy_store <- "data/_targets-2025-02-26"
-
-# Rescale a tree
-rescale_tree_len <- function (tree, scale){
-	tree$edge.length <- tree$edge.length / max(phytools::nodeHeights(tree)) * scale
-	tree
-}
-
-# Create a bootstrap tibble for plotting tree
-make_bs_tbl <- function(tree, cutoff = 0) {
-  # Make a dataframe (tibble) with node IDs (integers) and their corresponding bootstrap support values
-  # The tibble has two columns: one called "node", the other can be named as we like (here, "bootstrap")
-  bs_tibble <- tibble(
-    # hard-code node ID: internal nodes start after tip nodes,
-    # and phy$node.label is in the same order as internal nodes
-    node = 1:Nnode(tree) + Ntip(tree), 
-    bootstrap = parse_number(tree$node.label)
-    )
-  if (cutoff > 0) {
-    bs_tibble <-
-    bs_tibble |>
-      mutate(bootstrap = if_else(bootstrap < cutoff, "", bootstrap))
-  }
-  bs_tibble
-}
+filmy_store <- "data/_targets_2025-03-04"
 ```
 
 ## 次世代 DNA シーケンスによる<br>コケシノブ科の系統解析:<br>**深い系統関係の解明** {background-color="black" background-image="images/IMG_6580.png" background-size="cover" background-repeat="no-repeat" background-position="center"}
@@ -233,6 +212,9 @@ samples_for_table <-
   )
 
 
+samples_for_table |>
+  filter(genus == "Didymoglossum")
+
 taxon_count <- 
   samples_for_table |>
   group_by(genus, subgenus, section) |>
@@ -242,6 +224,10 @@ taxon_count <-
   mutate(across(everything(), ~replace_na(., "")))
 
 n_samples_total <- sum(taxon_count$n)
+
+taxon_count |>
+  filter(genus != "Hymenophyllum") |>
+  write_csv("trich_ss_sampling.csv")
 
 taxon_count |>
   filter(genus != "Hymenophyllum") |>
@@ -256,6 +242,12 @@ taxon_count |>
 
 ```{r}
 #| label: sampling-hym
+
+
+taxon_count |>
+  filter(genus == "Hymenophyllum") |>
+  write_csv("hymenophyllum_sampling.csv")
+
 taxon_count |>
   filter(genus == "Hymenophyllum") |>
   knitr::kable()
@@ -429,7 +421,8 @@ n_samples <- n_distinct(read_stats_nuc$name)
 read_stats <- read_stats_nuc |>
   bind_rows(read_stats_plastome)
 
-read_stats |>
+read_counts <-
+  read_stats |>
   group_by(type) |>
   summarize(
     mean_num_reads = mean(num_reads),
@@ -462,8 +455,11 @@ read_stats |>
       "{mean_perc_on_target} ± {sd_perc_on_target}"
     ),
     .keep = "none"
-  ) |>
-  knitr::kable()
+  )
+
+write_csv(read_counts, "read_counts.csv")
+
+knitr::kable(read_counts)
 ```
 
 *n* = `r n_samples`
@@ -553,18 +549,10 @@ dna_tree_plot <- ggtree(hybpiper_dna_tree_plotting) %<+%
   xlim(0, 120)
 
 overall_tree <- dna_tree_plot +
-  geom_tiplab(aes(label = species), size = 3) +
-  geom_nodelab(aes(label = bootstrap), hjust = -0.1, size = 3) +
-  annotate(
-    "text", x = 0, y = Inf,
-    label = glue::glue("GoFLAG マーカー（{n_markers_nuc}個）"),
-    size = 6, hjust = 0.1, vjust = 1,
-    family = "HiraKakuPro-W3") +
-  annotate(
-    "text", x = Inf, y = 0,
-    label = "iqtreeによるML法\n1000回ブートストラップ",
-    size = 6, hjust = 1, vjust = -0.5,
-    family = "HiraKakuPro-W3")
+  geom_tiplab(aes(label = species), size = 4) +
+  geom_nodelab(aes(label = bootstrap, color = bootstrap), hjust = -0.1, size = 4) +
+  scale_color_scico(palette = "lajolla", direction = -1, end = 0.8, name = "BS") +
+  theme(legend.position = c(0.9,0.1))
 
 ggsave(plot = overall_tree, file = "images/overall_tree.png", height = 11, width = 12)
 ```
@@ -634,11 +622,6 @@ trich_tree <- trich_nuc_tree_plot +
     hjust = -0.1,
     extend = 0.25
     ) +
-  annotate(
-    "text", x = 0, y = Inf,
-    label = glue::glue("GoFLAG マーカー（{n_markers_nuc}個）"),
-    size = 6, hjust = 0.1, vjust = 1,
-    family = "HiraKakuPro-W3") +
   annotate(
     "text", x = Inf, y = 0,
     label = "iqtreeによるML法\n1000回ブートストラップ",
@@ -725,12 +708,7 @@ trich_plastid_tree_plot <-
     offset = 11,
     hjust = -0.1,
     extend = 0.25
-    ) +
-  annotate(
-    "text", x = 0, y = Inf,
-    label = glue::glue("葉緑体マーカー（{n_markers_plastome}個）"),
-    size = 6, hjust = 0.1, vjust = 1,
-    family = "HiraKakuPro-W3")
+    )
 
 ggsave(plot = trich_plastid_tree_plot, file = "images/trich_plastid_tree.png", height = 11, width = 12)
 ```
@@ -748,24 +726,129 @@ trich_ss_plastid_tree <-
     offset = 6,
     hjust = -0.1,
     extend = 0.25
-    ) +
-  annotate(
-    "text", x = 0, y = Inf,
-    label = glue::glue("葉緑体マーカー（{n_markers_plastome}個）"),
-    size = 6, hjust = -0.2, vjust = 1,
-    family = "HiraKakuPro-W3")
+    )
 
 ggsave(plot = trich_ss_plastid_tree, file = "images/trich_ss_plastid_tree.png", height = 11, width = 12)
 ```
 
-## {background-color="white" background-image="images/overall_tree.png" background-size="contain" background-repeat="no-repeat" background-position="center"}
+## {background-color="white" background-image="images/overall_tree.png" background-size="contain" background-repeat="no-repeat" background-position="90% 100%"}
 
-## {background-color="white" background-image="images/trich_tree.png" background-size="contain" background-repeat="no-repeat" background-position="center"}
+:::: {.columns}
 
-## {background-color="white" background-image="images/trich_plastid_tree.png" background-size="contain" background-repeat="no-repeat" background-position="center"}
+::: {.column width="30%"}
+::: {.medium}
+GoFLAG マーカー（`r {n_markers_nuc}` 個）
 
-## {background-color="white" background-image="images/trich_ss_plastid_tree.png" background-size="contain" background-repeat="no-repeat" background-position="center"}
+- BSが非常に高い
+- *Trichomanes*（広義）が二つのクレードに分かれる
+:::
 
-## {background-color="white" background-image="images/anc_res_plot.png" background-size="contain" background-repeat="no-repeat" background-position="75% 100%"}
+:::
 
+::::
+
+## {background-color="white" background-image="images/overall_tree_ht.png" background-size="contain" background-repeat="no-repeat" background-position="90% 100%"}
+
+:::: {.columns}
+
+::: {.column width="30%"}
+::: {.medium}
+GoFLAG マーカー（`r {n_markers_nuc}` 個）
+
+- BSが非常に高い
+- *Trichomanes*（広義）が二つのクレードに分かれる
+:::
+
+:::
+
+::::
+
+## {background-color="white" background-image="images/overall_tree_trich_clades.png" background-size="contain" background-repeat="no-repeat" background-position="90% 100%"}
+
+:::: {.columns}
+
+::: {.column width="30%"}
+::: {.medium}
+GoFLAG マーカー（`r {n_markers_nuc}` 個）
+
+- BSが非常に高い
+- *Trichomanes*（広義）が二つのクレードに分かれる
+:::
+
+:::
+
+::::
+
+## {background-color="white" background-image="images/trich_tree.png" background-size="contain" background-repeat="no-repeat" background-position="90% 100%"}
+
+:::: {.columns}
+
+::: {.column width="30%"}
+::: {.medium}
+GoFLAG マーカー（`r {n_markers_nuc}` 個）
+
+- 属、亜属の関係が明らかに
+:::
+
+:::
+
+::::
+
+## {background-color="white" background-image="images/trich_plastid_tree.png" background-size="contain" background-repeat="no-repeat" background-position="90% 100%"}
+
+:::: {.columns}
+
+::: {.column width="20%"}
+::: {.medium}
+葉緑体 マーカー（`r {n_markers_plastome}` 個）
+
+- 属、亜属の関係が明らかに
+:::
+
+:::
+
+::::
+
+## {background-color="white" background-image="images/trich_ss_plastid_tree.png" background-size="contain" background-repeat="no-repeat" background-position="90% 100%"}
+
+:::: {.columns}
+
+::: {.column width="20%"}
+::: {.medium}
+葉緑体 マーカー（`r {n_markers_plastome}` 個）
+
+- *Trichomanes*（狭義）の基部に新しい系統が認められた
+- 新亜属にする必要あり
+:::
+
+:::
+
+::::
+
+## {background-color="white" background-image="images/anc_recon_plot.png" background-size="contain" background-repeat="no-repeat" background-position="90% 100%"}
+
+:::: {.columns}
+
+::: {.column width="20%"}
+::: {.medium}
 祖先形質復元
+
+- クレードごとに纏まる
+- *Trichomanes*（広義）の基部は地上性だった可能性がある
+:::
+
+:::
+
+::::
+
+## まとめ
+
+- 次世代シーケンサー（シーケンスキャプチャー法）により、**コケシノブ科の属、亜属レベルの系統関係が明らかになった**
+- *Trichomanes*（狭義）の基部に**新しい系統が認められた**
+- *Trichomanes*（広義）の基部は**地上性だった可能性がある**
+  - より詳しいデータが必要（特に半着生の種）
+
+# ご清聴ありがとう<br>ございます
+
+## 謝辞
+

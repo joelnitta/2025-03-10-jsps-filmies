@@ -1,118 +1,186 @@
-library(phytools)
+suppressPackageStartupMessages(library(tidyverse))
+library(targets)
+library(ape)
+library(ggtree)
 library(ggimage)
+library(phytools)
 
-tar_load(c(combined_sanger_tree, traits, samples_with_subgen), store = "data/_targets-2025-02-26")
+source("functions.R")
 
-holo_epi_traits <-
-  traits |>
-  mutate(holo_epi = case_when(
-    ecology == "t" ~ "not_epiphyte",
-    ecology == "he" ~ "not_epiphyte",
-    growth_form == "i" ~ "individual_epiphyte",
-    growth_form == "c" ~ "colonial_epiphyte",
-    .default = NA_character_
-  )) |>
-  select(genus, specific_epithet, holo_epi)
+# Define location of targets cache from goflag filmies analysis
+filmy_store <- "data/_targets_2025-03-04"
 
-holo_epi_tips <-
-  tibble(tip = combined_sanger_tree$tip.label) |>
-  left_join(samples_with_subgen, by = "tip", relationship = "one-to-one") |>
-  select(tip, genus, specific_epithet, species) |>
-  left_join(
-    holo_epi_traits,
-    by = c("genus", "specific_epithet"),
-    relationship = "many-to-one"
-  ) |>
-  filter(!is.na(holo_epi)) |>
+tar_load(c(anc_recon, holo_epi_tips, samples_with_subgen), store = filmy_store)
+
+samples_with_subgen <- mutate(
+  samples_with_subgen,
+  subgenus = str_replace_all(subgenus, "Davalliopsis \\?", "Pachychaetum")
+) |>
   mutate(
-    keep = case_when(
-      genus == "Hymenophyllum" & tip != "Hymenophyllum_apiculatum" ~ FALSE,
-      .default = TRUE
+    subgenus = case_when(
+      species == "Didymoglossum fulgens" ~ "Microgonium",
+      species == "Didymoglossum sublimbatum" ~ "Microgonium",
+      .default = subgenus
     )
-  ) |>
-  filter(keep) |>
-  select(-keep) |>
-  # Keep only one sample per species
-  slice_head(n = 1, by = species)
+  )
 
-tips_keep <- intersect(holo_epi_tips$tip, combined_sanger_tree$tip.label)
-
-tree <- ape::keep.tip(combined_sanger_tree, tips_keep) |>
-  ape::root("Hymenophyllum_apiculatum") |>
-  ladderize()
-
-holo_epi_tips_use <- holo_epi_tips |>
-  filter(tip %in% tips_keep)
-
-holo_epi_tips_vec <-
-  holo_epi_tips_use |>
-  pull(holo_epi) |>
-  set_names(holo_epi_tips_use$tip)
-
-epi_mod_er <- fitMk(tree, holo_epi_tips_vec, model = "ER")
-epi_mod_sym <- fitMk(tree, holo_epi_tips_vec, model = "SYM")
-epi_mod_ard <- fitMk(tree, holo_epi_tips_vec, model = "ARD")
-
-epi_mod_aov <- anova(epi_mod_er, epi_mod_sym, epi_mod_ard)
-
-epi_mod_ancr <- ancr(epi_mod_ard)
-
-plot(epi_mod_ancr)
-
-anc_state_tbl <- epi_mod_ancr$ace |>
+# Extract tibble of ancestral state percentages
+anc_state_tbl <- anc_recon$ace |>
   as.data.frame() |>
   rownames_to_column("node") |>
   as_tibble() |>
-  mutate(node = parse_number(node))
+  mutate(node = parse_number(node)) |>
+  pivot_longer(names_to = "trait", values_to = "prob", -node) |>
+  mutate(n_states = str_count(trait, "\\+") + 1) |>
+  separate_rows(trait, sep = "\\+") |>
+  mutate(prob = prob / n_states) |>
+  summarize(prob = sum(prob), .by = c(node, trait)) |>
+  pivot_wider(names_from = trait, values_from = prob, id_cols = node)
 
+# Set trait colors
 # Do not change the order of elements in this vector!
-# hard-coded for pie cols to match tip cols
+# they are hard-coded for pie cols to match tip cols
+trait_colors <- c(
+  terrestrial = "#D55E00",
+  epi_tree_fern = "#F0E442",
+  epiphytic = "#009E73",
+  epipetric = "#0072B2"
+)
 
 # To preview colors
 # scales::show_col(palette.colors()) # nolint
 
-trait_colors <- c(
-  colonial_epiphyte = "#009E73", # grey in Dubuisson
-  individual_epiphyte = "#0072B2", # black in Dubuission
-  not_epiphyte = "#D55E00" # white in Dubuisson
-)
-
+# Set trait labels
 trait_labels <- c(
-  colonial_epiphyte = "Colonial epiphyte",
-  individual_epiphyte = "Individual epiphyte",
-  not_epiphyte = "Not epiphyte"
+  terrestrial = "Terrestrial",
+  epiphytic = "Epiphytic",
+  epi_tree_fern = "Epi. on tree fern",
+  epipetric = "Epipetric"
 )
 
-pies <- nodepie(
-  anc_state_tbl,
-  cols = 2:4,
-  color = trait_colors,
-  outline.color = "black",
-  outline.size = 0.2
-  )
-
-tree <- attributes(epi_mod_ancr)$tree |>
+# Rescale tree
+tree <- attributes(anc_recon)$tree |>
   rescale_tree_len(100)
 
- ggtree(tree) + xlim(0, 120)
+# Make pie charts
+# - node pie charts
+node_pies <-
+  anc_state_tbl |>
+  select(node, all_of(names(trait_colors))) |>
+  ggtree::nodepie(
+    cols = 2:4,
+    color = trait_colors,
+    outline.color = "black",
+    outline.size = 0.2
+  )
 
-dna_tree_plot <- ggtree(tree) %<+%
-  holo_epi_tips +
-  # add extra horizontal space for species names
-  xlim(0, 130) +
-  geom_tiplab(aes(label = species), size = 5, offset = 1.5) +
-  geom_tippoint(aes(fill = holo_epi), size = 5, shape = 22, color = "black") +
+# - tip pie charts
+curr_state_tbl <-
+  holo_epi_tips |>
+  select(tip, trait = growth_habit) |>
+  mutate(n_states = str_count(trait, "\\+") + 1) |>
+  separate_rows(trait, sep = "\\+") |>
+  mutate(prob = 1 / n_states) |>
+  pivot_wider(
+    names_from = trait,
+    values_from = prob,
+    id_cols = tip,
+    values_fill = 0
+  )
+
+tip_pies <- tibble(tip = tree$tip.label) %>%
+  mutate(node = 1:nrow(.)) |>
+  left_join(curr_state_tbl, by = "tip") |>
+  select(node, all_of(names(trait_colors))) |>
+  ggtree::nodepie(
+    cols = 2:5,
+    color = trait_colors,
+    outline.color = "black",
+    outline.size = 0.2
+  )
+# - combine
+pies <- c(node_pies, tip_pies)
+
+# Make simplified growth habit tip data for legend
+growth_habit_simple <- holo_epi_tips |>
+  select(tip, species, growth_habit) |>
+  separate(growth_habit, "growth_habit", sep = "\\+", extra = "drop") |>
+  assertr::verify(n_distinct(growth_habit) == 4)
+
+# Prepare clade labels
+subgenus_labs <- prep_clade_labels(tree, samples_with_subgen, subgenus) |>
+  # Drop Hymenophyllum subgen
+  filter(subgenus != "Mecodium")
+genus_labs <- prep_clade_labels(tree, samples_with_subgen, genus) |>
+  # Set offset by whether the genus has a subgenus or not
+  left_join(
+    unique(select(samples_with_subgen, genus, subgenus)),
+    by = "genus"
+  ) |>
+  summarize(
+    n_subgenus = n_distinct(subgenus, na.rm = TRUE),
+    .by = c(mrca, genus)
+  ) |>
+  mutate(
+    offset_dist = case_when(
+      # Special case for outgroup Hymenophyllum: don't show subgenus
+      genus == "Hymenophyllum" ~ 3,
+      n_subgenus > 0 ~ 28,
+      n_subgenus == 0 ~ 3
+    )
+  )
+
+# Make base plot with pie charts
+dna_tree_plot <- ggtree::ggtree(tree) %<+%
+  growth_habit_simple
+
+base_plot <- inset(dna_tree_plot, pies, width = 0.04, height = 0.04)
+
+# Add rest of features
+plot <- base_plot +
+  # Need extra horizontal space for labels
+  xlim(0, 145) +
+  geom_cladelab(
+    data = genus_labs,
+    mapping = aes(node = mrca, label = genus, offset = offset_dist),
+    hjust = -0.1,
+    extend = 0.25,
+    barsize = 1,
+    fontsize = 4
+  ) +
+  geom_cladelab(
+    data = subgenus_labs,
+    mapping = aes(node = mrca, label = subgenus),
+    offset = 3,
+    hjust = -0.1,
+    extend = 0.25,
+    barsize = 0.5,
+    fontsize = 4
+  ) +
+  geom_tippoint(
+    aes(fill = growth_habit),
+    size = 0,
+    shape = 22,
+    color = "black",
+    alpha = 0
+  ) +
   scale_fill_manual(
-    values = trait_colors, name = "Growth habit",
+    values = trait_colors,
+    name = "Growth habit",
     breaks = names(trait_labels),
     labels = trait_labels
   ) +
   theme(
     legend.title = element_text(size = 20),
     legend.text = element_text(size = 16),
-    legend.position.inside = c(1, 0)
-  )
+    legend.position = c(0.9, 0.3)
+  ) +
+  guides(fill = guide_legend(override.aes = list(size = 5, alpha = 1)))
 
-anc_res_plot <- inset(dna_tree_plot, pies, width = 0.04, height = 0.04)
-
-ggsave(plot = anc_res_plot, file = "images/anc_res_plot.png", height = 11, width = 12)
+ggsave(
+  plot = plot,
+  file = "images/anc_recon_plot.png",
+  height = 16,
+  width = 10,
+  units = "in"
+)

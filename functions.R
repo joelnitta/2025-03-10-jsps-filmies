@@ -79,3 +79,26 @@ plot_full_nuclear <- function(hybpiper_dna_tree, samples_with_subgen) {
       family = "HiraKakuPro-W3"
     )
 }
+
+prep_clade_labels <- function(tree, samples_with_subgen, tax_level) {
+  clade_data <- tibble(
+    tip = tree$tip.label
+  ) |>
+    left_join(samples_with_subgen, relationship = "one-to-one", by = "tip") |>
+    filter(!is.na({{tax_level}}))
+
+  singleltons <- clade_data |>
+    add_count({{tax_level}}) |>
+    filter(n == 1) |>
+    select(tip, {{tax_level}}) |>
+    mutate(mrca = match(tip, tree$tip.label)) |>
+    select(-tip)
+
+  clade_data |>
+    add_count({{tax_level}}) |>
+    filter(n > 1) |>
+    group_by({{tax_level}}) |>
+    summarize(mrca = getMRCA(tree, tip)) |>
+    select(mrca, {{tax_level}}) |>
+    bind_rows(singleltons)
+}
