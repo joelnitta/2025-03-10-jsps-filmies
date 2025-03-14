@@ -111,6 +111,9 @@ growth_habit_simple <- holo_epi_tips |>
 subgenus_labs <- prep_clade_labels(tree, samples_with_subgen, subgenus) |>
   # Drop Hymenophyllum subgen
   filter(subgenus != "Mecodium")
+
+adj <- 50
+
 genus_labs <- prep_clade_labels(tree, samples_with_subgen, genus) |>
   # Set offset by whether the genus has a subgenus or not
   left_join(
@@ -124,9 +127,9 @@ genus_labs <- prep_clade_labels(tree, samples_with_subgen, genus) |>
   mutate(
     offset_dist = case_when(
       # Special case for outgroup Hymenophyllum: don't show subgenus
-      genus == "Hymenophyllum" ~ 3,
-      n_subgenus > 0 ~ 28,
-      n_subgenus == 0 ~ 3
+      genus == "Hymenophyllum" ~ 3 + adj,
+      n_subgenus > 0 ~ 28 + adj,
+      n_subgenus == 0 ~ 3 + adj
     )
   )
 
@@ -139,7 +142,8 @@ base_plot <- inset(dna_tree_plot, pies, width = 0.04, height = 0.04)
 # Add rest of features
 plot <- base_plot +
   # Need extra horizontal space for labels
-  xlim(0, 145) +
+  xlim(0, 200) +
+  geom_tiplab(aes(label = species), size = 3, offset = 3) +
   geom_cladelab(
     data = genus_labs,
     mapping = aes(node = mrca, label = genus, offset = offset_dist),
@@ -151,7 +155,7 @@ plot <- base_plot +
   geom_cladelab(
     data = subgenus_labs,
     mapping = aes(node = mrca, label = subgenus),
-    offset = 3,
+    offset = 45,
     hjust = -0.1,
     extend = 0.25,
     barsize = 0.5,
@@ -173,7 +177,7 @@ plot <- base_plot +
   theme(
     legend.title = element_text(size = 20),
     legend.text = element_text(size = 16),
-    legend.position = c(0.9, 0.3)
+    legend.position = c(0.15, 0.95)
   ) +
   guides(fill = guide_legend(override.aes = list(size = 5, alpha = 1)))
 
